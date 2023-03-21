@@ -1,1 +1,1 @@
-# tipe
+# TIPE
