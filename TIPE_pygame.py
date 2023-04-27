@@ -1,1 +1,2 @@
-print(2+2)
+from math import sqrt
+sqrt(9)
