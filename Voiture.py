@@ -11,7 +11,7 @@ class Voiture :
         largeur_voiture = 50
         longueur_voiture = 50
         self.corps = pygame.image.load("voiture.png")
-        self.coprs = pygame.transform.scale(self.corps, (largeur_voiture, longueur_voiture))
+        self.corps = pygame.transform.scale(self.corps, (largeur_voiture, longueur_voiture))
         self.centre = [self.position[0] + largeur_voiture / 2, self.position[1] + longueur_voiture / 2]
                                             
         self.position = (0,0)
