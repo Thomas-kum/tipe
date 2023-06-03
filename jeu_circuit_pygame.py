@@ -3,87 +3,115 @@ from pygame.locals import *
 import math
 
 pygame.init()
-screen = pygame.display.set_mode((800, 600))
-
-car_x_debut=740
-car_y_debut=320
-car_acceleration=0.05
-car_freinage=0.1
-
-nb_tours=0
-
-car_x = car_x_debut
-car_y = car_y_debut
-car_speed = 0
-car_angle = 0
-car_rotation = 3
-
-car_image = pygame.image.load("voiture.png")
-car_image = pygame.transform.scale(car_image, (30, 50))
-car_image = pygame.transform.rotate(car_image, car_angle)
+circuit_taille=(800, 600)
+circuit_debut=(740,320)
+ecran = pygame.display.set_mode(circuit_taille)
 
 circuit_image = pygame.image.load("circuit.png")
-circuit_image = pygame.transform.scale(circuit_image, (800, 600))
+circuit_image = pygame.transform.scale(circuit_image,circuit_taille)
 
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            running = False
+class Voiture:
+    def __init__(self,nom_fichier_image,debut,IA):
+        # Données sur la voiture
+        # Capacités de la voiture
+        global voiture_acceleration_palier
+        global voiture_freinage_palier
+        global voiture_rotation_palier
+        global voiture_type
+        voiture_acceleration_palier=0.05 # Incrémentation de la vitesse à chaque clic (accélération).
+        voiture_freinage_palier=0.1 # Incrémentation de la vitesse à chaque clic (freinage).
+        voiture_rotation_palier = 3
+        voiture_type=IA
+        # Variables d'état
+        self.x = debut[0]
+        self.y = debut[1]
+        self.vitesse = 0
+        self.orientation = 0
+        # Avancement de la voiture.
+        self.nb_tours=0
+        # Représentation de la voiture.
+        self.car_image = pygame.image.load(nom_fichier_image)
+        self.car_image = pygame.transform.scale(self.car_image, (30, 50))
+        #self.car_image = pygame.transform.rotate(self.car_image, self.orientation)
 
+    def rotation(self,gauche=False,droite=False):
+        if gauche and self.vitesse!=0:
+            self.orientation -= voiture_rotation_palier
+        elif droite and self.vitesse!=0:
+            self.orientation += voiture_rotation_palier
+
+    def deplacement(self,acce=False,frei=False):
+        if acce:
+            self.vitesse += voiture_acceleration_palier
+        elif frei and self.vitesse>0:
+            self.vitesse -= voiture_freinage_palier
+
+    def depart(self,debut):
+        self.x=debut[0]
+        self.y=debut[1]
+        self.vitesse=0
+        self.orientation=0
+        self.nb_tours=0
+ 
+    def update(self):
+        self.orientation=self.orientation%360
+        self.x += self.vitesse * math.sin(math.radians(self.orientation))
+        self.y -= self.vitesse * math.cos(math.radians(self.orientation))
+        if self.vitesse <0:
+            self.vitesse=0
+
+def jeu_deplacement(vehicule):
     keys = pygame.key.get_pressed()
-    if keys[K_LEFT] and car_speed!=0:
-        car_angle -= car_rotation
-    if keys[K_RIGHT] and car_speed!=0:
-        car_angle += car_rotation
+    if keys[K_LEFT]:
+        vehicule.rotation(gauche=True)
+    if keys[K_RIGHT]:
+        vehicule.rotation(droite=True)
     if keys[K_UP]:
-        car_speed += car_acceleration
-    if keys[K_DOWN] and car_speed>0:
-        car_speed -= car_freinage
+        vehicule.deplacement(acce=True)
+    if keys[K_DOWN]:
+        vehicule.deplacement(frei=True)
 
-    car_angle=car_angle%360
-    
-    car_x += car_speed * math.sin(math.radians(car_angle))
-    car_y -= car_speed * math.cos(math.radians(car_angle))
+def jeu_controles(vehicule):
+    if not (0<=vehicule.x<=circuit_taille[0] and 0<=vehicule.y<=circuit_taille[1]):
+        print("Sortie de cadre !")
+        print(vehicule.x)
+        vehicule.depart(circuit_debut)
 
-    if car_speed <0:
-        car_speed=0
-
-    if not (5<=car_x<=795 and 5<=car_y<=595):
-        print("")
-        ValueError: print("Sortie de cadre !")
-        print(car_rect)
-        car_x = car_x_debut
-        car_y = car_y_debut
-        car_speed = 0
-        car_angle = 0
-
-    car_rect = car_image.get_rect(center=(car_x, car_y))
-    #if circuit_image.get_at((car_rect.x, car_rect.y)) == (0, 0, 0):
-    if circuit_image.get_at((int(car_x), int(car_y))) == (0, 0, 0):
-
-        print("")
+    if circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (0, 0, 0):
         print("Echec -> Circuit !")
-        print(car_rect)
-        print(car_x,car_y)
-        car_x = car_x_debut
-        car_y = car_y_debut
-        car_speed = 0
-        car_angle = 0
-        print("Tours : ",nb_tours)
-        nb_tours=0
-    
-    if circuit_image.get_at((int(car_x), int(car_y))) == (76, 255, 0):
-        nb_tours+=1
+        print(vehicule.x,vehicule.y)
+        vehicule.depart(circuit_debut)
 
+def jeu_victoire(vehicule):
+    if circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (76, 255, 0):
+        vehicule.nb_tours+=1
 
-    screen.blit(circuit_image, (0, 0))
-    rotated_car_image = pygame.transform.rotate(car_image, -car_angle)
-    car_rect = rotated_car_image.get_rect(center=(car_x, car_y))
-    screen.blit(rotated_car_image, car_rect)
+def jeu_update(vehicule):
+    rotated_car_image = pygame.transform.rotate(vehicule.car_image, -vehicule.orientation)
+    car_rect = rotated_car_image.get_rect(center=(vehicule.x, vehicule.y))
+    ecran.blit(rotated_car_image, car_rect)
 
-    pygame.display.update()
-    pygame.time.Clock().tick(90)
+def jeu(liste_vehicules):
+    jeu_en_cours = True
+    while jeu_en_cours:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                jeu_en_cours = False
 
-print(nb_tours)
-pygame.quit()
+        for vehicule in liste_vehicules:
+            if not(vehicule.voiture_type):
+                jeu_deplacement(vehicule)
+
+            vehicule.update()
+            jeu_controles(vehicule)
+            jeu_victoire(vehicule)
+
+        ecran.blit(circuit_image, (0, 0))
+        for vehicule in liste_vehicules:
+            jeu_update(vehicule)
+        pygame.display.update()
+        pygame.time.Clock().tick(90)
+
+    pygame.quit()
+
+jeu([Voiture("voiture.png", circuit_debut,False)])
