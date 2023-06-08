@@ -17,11 +17,10 @@ class Voiture:
         global voiture_acceleration_palier
         global voiture_freinage_palier
         global voiture_rotation_palier
-        global voiture_type
         voiture_acceleration_palier=0.05 # Incrémentation de la vitesse à chaque clic (accélération).
         voiture_freinage_palier=0.1 # Incrémentation de la vitesse à chaque clic (freinage).
         voiture_rotation_palier = 3
-        voiture_type=IA
+        self.voiture_type=IA
         # Variables d'état
         self.x = debut[0]
         self.y = debut[1]
