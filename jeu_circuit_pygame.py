@@ -1,10 +1,12 @@
 import pygame
 from pygame.locals import *
 import math
+import time
+from annexe import *
 
 pygame.init()
-circuit_taille=(800, 600)
-circuit_debut=(740,320)
+circuit_taille=(2000, 1000)
+circuit_debut=(1890,440)
 ecran = pygame.display.set_mode(circuit_taille)
 
 circuit_image = pygame.image.load("circuit.png")
@@ -13,6 +15,8 @@ circuit_image = pygame.transform.scale(circuit_image,circuit_taille)
 class Voiture:
     def __init__(self,nom_fichier_image,debut,IA):
         # Données sur la voiture
+        global taille_voiture
+        taille_voiture=(30,50)
         # Capacités de la voiture
         global voiture_acceleration_palier
         global voiture_freinage_palier
@@ -27,11 +31,13 @@ class Voiture:
         self.vitesse = 0
         self.orientation = 0
         # Avancement de la voiture.
-        self.nb_tours=0
+        self.avancement_tour=0
+        self.tours=[] # Permet de stocker les temps au tour de chaque voiture.
         # Représentation de la voiture.
         self.car_image = pygame.image.load(nom_fichier_image)
-        self.car_image = pygame.transform.scale(self.car_image, (30, 50))
-        #self.car_image = pygame.transform.rotate(self.car_image, self.orientation)
+        self.car_image = pygame.transform.scale(self.car_image, taille_voiture)
+        # Informations de chronométrage.
+        self.temps_debut=time.time()
 
     def rotation(self,gauche=False,droite=False):
         if gauche and self.vitesse!=0:
@@ -48,6 +54,8 @@ class Voiture:
     def depart(self,debut):
         self.x=debut[0]
         self.y=debut[1]
+        self.avancement_tour=0
+        self.temps_debut=time.time()
         self.vitesse=0
         self.orientation=0
         self.nb_tours=0
@@ -58,6 +66,34 @@ class Voiture:
         self.y -= self.vitesse * math.cos(math.radians(self.orientation))
         if self.vitesse <0:
             self.vitesse=0
+
+    def chronometre(self):
+        tempscomplet=time.time() - self.temps_debut
+        self.tours.append(tempscomplet)
+        return tempscomplet
+    
+    def radar(self):
+        pas=3
+        longueur_max=250
+        angles=[-60,-30,0,30,60]
+        donnees=[]
+        for valeur_angle in angles:
+            longueur=taille_voiture[1]/2
+            test=True
+            while test:
+                angle_teste=self.orientation+math.radians(valeur_angle)-math.pi/2
+                x_1,y_1=transformation((self.x,self.y),longueur,angle_teste)
+                if circuit_image.get_at((x_1, y_1)) == (0, 0, 0):
+                    test=False
+                    donnees.append(longueur)
+                elif longueur> longueur_max:
+                    test=False
+                    donnees.append(float("infinity"))
+                else:
+                    longueur+=pas
+        return donnees
+
+
 
 def jeu_deplacement(vehicule):
     keys = pygame.key.get_pressed()
@@ -81,10 +117,16 @@ def jeu_controles(vehicule):
         print(vehicule.x,vehicule.y)
         vehicule.depart(circuit_debut)
 
-def jeu_victoire(vehicule):
-    if circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (76, 255, 0):
-        vehicule.nb_tours+=1
+    if circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (0, 0, 255):
+        print("Fin du tour.")
+        vehicule.depart(circuit_debut)
 
+def jeu_tour(vehicule):
+    if circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (0, 255, 0) and vehicule.avancement_tour==3:
+        vehicule.chronometre()
+    elif circuit_image.get_at((int(vehicule.x), int(vehicule.y))) == (255, 0, 0):
+        vehicule.avancement_tour+=1
+    
 def jeu_update(vehicule):
     rotated_car_image = pygame.transform.rotate(vehicule.car_image, -vehicule.orientation)
     car_rect = rotated_car_image.get_rect(center=(vehicule.x, vehicule.y))
@@ -102,8 +144,9 @@ def jeu(liste_vehicules):
                 jeu_deplacement(vehicule)
 
             vehicule.update()
+            vehicule.radar()
             jeu_controles(vehicule)
-            jeu_victoire(vehicule)
+            jeu_tour(vehicule)
 
         ecran.blit(circuit_image, (0, 0))
         for vehicule in liste_vehicules:
@@ -111,6 +154,8 @@ def jeu(liste_vehicules):
         pygame.display.update()
         pygame.time.Clock().tick(90)
 
+    for vehicule in liste_vehicules:
+        print(vehicule.tours)
     pygame.quit()
 
 jeu([Voiture("voiture.png", circuit_debut,False)])
