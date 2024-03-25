@@ -129,5 +129,7 @@ def reseau(informations_reseau, donnees_entrainement, donnees_test):
     print("")
     print("Test")
     print("")
+    
+    resultat = reseau(informations_reseau, donnees_test, V, A, W, B)
 
-    return W,B
+    return resultat
