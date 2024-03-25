@@ -1,10 +1,5 @@
 import numpy as np
-from random import randint
 
-def nombre_alea():
-    return randint(0,10000)/10000
-
-# Fonctions de base
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 def reLu(x):
@@ -30,8 +25,8 @@ def definition_reseau(informations_reseau):
     for i in range(len(informations_reseau) - 1):
         A.append(np.array([[None] for _ in range(informations_reseau[i + 1])]))
         V.append(np.array([[None] for _ in range(informations_reseau[i + 1])]))
-        W.append(np.array([[nombre_alea() for _ in range(informations_reseau[i])] for _ in range(informations_reseau[i + 1])]))
-        B.append(np.array([[nombre_alea()] for _ in range(informations_reseau[i + 1])]))
+        W.append(np.array([[np.random.random_sample() for _ in range(informations_reseau[i])] for _ in range(informations_reseau[i + 1])]))
+        B.append(np.array([[np.random.random_sample()] for _ in range(informations_reseau[i + 1])]))
 
     return V, A, W, B
 
@@ -61,8 +56,8 @@ def retropropagation(valeurs_theoriques, A, V, W, B):
 
 def maj(informations_reseau, taux, W, B, dW, dB):
     for i in range(len(informations_reseau) - 1):
-        W[i] = W[i] - taux * dW
-        B[i] = B[i] - taux * dB
+        W[i] = W[i] - taux * dW[i]
+        B[i] = B[i] - taux * dB[i]
     return W, B
 
 
@@ -95,16 +90,44 @@ def entrainement(informations_reseau, taux_apprentissage, donnees_entree):
     print("L'entrainement est terminé !")
 
     return A,V,W,B
-    
+
+def resultat(M):
+    return np.argmax(M)
+
+def test(informations_reseau, donnees, V, A, W, B):
+
+    images, valeurs = donnees
+    succes, taille_jeu = 0, len(images)
+
+    for k in range(taille_jeu):
+        V[0] = images[k][0]
+        A[0] = images[k][0]
+
+        A,V = propagation(informations_reseau, V, A, W, B)
+
+        valeur_pratique = resultat(V[-1])
+        valeur_theorique = valeurs[k]
+
+        if valeur_theorique == valeur_pratique:
+            succes += 1
+
+    print("Le test est terminé !")
+
+    return round(succes/taille_jeu, 4)
+
 def reseau(informations_reseau, donnees_entrainement, donnees_test):
     # Taille colonne 1, colonne 2, ...
 
-    taux_apprentissage = randint(0, 100) / 100
+    taux_apprentissage = np.random.random_sample(4)
+
+    print("")
+    print("Entrainement")
+    print("")
 
     A,V,W,B = entrainement(informations_reseau, taux_apprentissage, donnees_entrainement)
 
-    print("C'est l'heure du test !")
-
-
+    print("")
+    print("Test")
+    print("")
 
     return W,B
