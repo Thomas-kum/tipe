@@ -1,4 +1,8 @@
-from reseau import ReseauConvolutif
+from reseau import Reseau
+from annexe import ReLu, sigmoid, tanh, softmax
+from matplotlib import pyplot as plt
+from graphes import affichage
+
 import numpy as np
 import keras
 from keras import layers
@@ -9,14 +13,11 @@ from keras import layers
 x_train = x_train.astype("float32") / 255
 x_test = x_test.astype("float32") / 255
 
-assert x_train.shape == (60000, 28, 28)
-print("Données d'entrainement : nombre de données ", x_train.shape[0], " ; taille de l'image ", x_train[0].shape[0], x_train[0].shape[1])
-print("Données de test : nombre de données ", x_test.shape[0], " ; taille de l'image ", x_test[0].shape[1], x_test[0].shape[1])
+reseau_mnist = Reseau([28*28, 10, 10], 0.10, [ReLu, softmax])
+reseau_mnist.entrainement((x_train, y_train), 500)
+reseau_mnist.test((x_test, y_test))
 
-y_train = keras.utils.to_categorical(y_train)
-y_test = keras.utils.to_categorical(y_test)
+taux_succes = reseau_mnist.taux_reussite
 
+affichage([0.05*i*500 for i in range(len(taux_succes))], [taux_succes], ["Taux de succès"], "Taux de succès en fonction du nombre d'entraînements", "Nombre d'entraînements", "Taux de succès")
 
-reseau_mnist = ReseauConvolutif([28*28, 28*28, 10],np.random.rand(),"sigmoid",(x_train, y_train), (x_test, y_test))
-reseau_mnist.entrainement()
-reseau_mnist.test()

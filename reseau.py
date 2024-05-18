@@ -1,138 +1,89 @@
 import numpy as np
+from annexe import *
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-def reLu(x):
-    return max(0, x)
-def tanh(x):
-    return np.tanh(x)
-def derivee_sigmoid(x):
-    return sigmoid(x) * (1 - sigmoid(x))
-def derivee_reLu(x):
-    return 1 if x > 0 else 0
-def derivee_tanh(x):
-    return 1 - tanh(x) ** 2
-def derivee_cout(valeurs_theoriques, valeurs_pratiques):
-    return 2 * (valeurs_pratiques - valeurs_theoriques)
-def ligne_to_colonne(M):
-    return M.reshape(M.shape[0] , 1)
-def matrice_to_colonne(M):
-    return M.reshape(M.shape[0] * M.shape[1], 1)
 
-class ReseauConvolutif:
+class Reseau:
+    def __init__(self, dimensions, taux_apprentissage, fonctions_activation_noms):
+        print("\nDEFINITION DU RESEAU VECOTIRISE")
+        assert len(fonctions_activation_noms) == len(dimensions) - 1
 
-    def __init__(self, info, taux, fonction_nom, data_train, data_test):
-        self.informations_reseau = info
-        self.taux_apprentissage = taux
+        self.informations_reseau = dimensions
+        self.taux_apprentissage = taux_apprentissage
+        self.fonctions_activation = fonctions_activation_noms
 
-        if fonction_nom == "sigmoid":
-            self.fonction = np.vectorize(sigmoid)
-            self.fonction_derivee = np.vectorize(derivee_sigmoid)
-        elif fonction_nom == "reLu":
-            self.fonction = np.vectorize(reLu)
-            self.fonction_derivee = np.vectorize(derivee_reLu)
-        else:
-            self.fonction = np.vectorize(tanh)
-            self.fonction_derivee = np.vectorize(derivee_tanh)
+        self.A, self.V = [], []
+        self.W, self.B = self.definition_reseau()
 
-        self.x_train, self.y_train = data_train
-        self.x_test, self.y_test = data_test
+        self.nb_classes = self.informations_reseau[-1]
+        self.nb_entrainements, self.nb_tests = 0, 0
+        self.taux_reussite = []
 
-        self.A, self.V, self.W, self.B = self.definition_reseau()
-
-        self.taille_jeu_entrainement = len(self.x_train)
-
-        self.nombre_succes = 0
-        self.taille_jeu_test = len(self.x_test)
-
+        print("Forme du réseau : ", self.informations_reseau)
+        print("Fonctions d'activation : ", self.fonctions_activation)
+        print("Taux d'apprentissage : ", self.taux_apprentissage)
 
     def definition_reseau(self):
-
-        print("\nDEFINITION DU RESEAU")
-        A, V, W, B = [], [], [], []
-
-        A.append(np.array([[None] for _ in range(self.informations_reseau[0])]))
-        V.append(np.array([[None] for _ in range(self.informations_reseau[0])]))
-
+        w, b = [], []
         for i in range(len(self.informations_reseau) - 1):
-            A.append(np.array([[None] for _ in range(self.informations_reseau[i + 1])]))
-            V.append(np.array([[None] for _ in range(self.informations_reseau[i + 1])]))
+            w.append(np.random.randn(self.informations_reseau[i + 1], self.informations_reseau[i]) / 4)
+            b.append(np.random.randn(self.informations_reseau[i + 1], 1) / 4)
+        return w, b
 
-            W.append(np.random.uniform(-1,1,(self.informations_reseau[i + 1], self.informations_reseau[i])))
-            B.append(np.random.uniform(-1,1,(self.informations_reseau[i + 1], 1)))
-        return A, V, W, B
-
-    def affichage_reinitialisation(self, total):
-        self.nombre_actuel = 0
-        self.nombre_total = total
-        self.nombre_affiche = -1
-
-    def affichage(self):
-        calcul = int(self.nombre_actuel / self.nombre_total * 10)
-        if calcul > self.nombre_affiche:
-            self.nombre_affiche += 1
-            print("Progression : ", self.nombre_affiche * 10, "%")
     def propagation(self, x):
-        if x.shape[1] != 1:
-            x = matrice_to_colonne(x)
-
-        self.A[0] = x
-        self.V[0] = x
-
+        self.A = [x]
+        self.V = [x]
         for i in range(len(self.informations_reseau) - 1):
-            self.A[i + 1] = np.dot(self.W[i], self.V[i]) + self.B[i]
-            self.V[i + 1] = self.fonction(self.A[i + 1])
+            self.A.append(np.dot(self.W[i], self.V[i]) + self.B[i])
+            self.V.append(self.fonctions_activation[i]("", self.A[i + 1]))
 
-    def retropropagation(self, y):
-        dV = [None] * len(self.V)
-        dW = [None] * len(self.W)
-        dB = [None] * len(self.B)
+    def retropropagation(self, y, d):
+        y = ys_to_matrice(y, self.nb_classes).T
 
-        dV[-1] = derivee_cout(self.V[-1], y) * self.fonction(self.A[-1])
-        dW[-1] = np.dot(dV[-1], self.V[-2].T)
-        dB[-1] = dV[-1]
+        for k in range(1, len(self.V)):
+            if k == 1:
+                d_v = self.V[-1] - y
+            else:
+                d_v = np.dot(self.W[-k + 1].T, d_v) * self.fonctions_activation[-k]("derivee", self.V[-k])
 
-        for k in range(2, len(self.V)):
-            dV[-k] = np.dot(self.W[-k + 1].T, dV[-k + 1]) * self.fonction(self.V[-k])
-            dW[-k] = np.dot(dV[-k], self.V[-k - 1].T)
-            dB[-k] = dV[-k]
+            d_w = 1 / d * np.dot(d_v, self.V[-k - 1].T)
+            d_b = 1 / d * np.sum(d_v, axis=1).reshape(self.B[-k].shape[0], 1)
 
-        for i in range(len(self.informations_reseau) - 1):
-            self.W[i] = self.W[i] - self.taux_apprentissage * dW[i]
-            self.B[i] = self.B[i] - self.taux_apprentissage * dB[i]
+            self.W[-k] -= self.taux_apprentissage * d_w
+            self.B[-k] -= self.taux_apprentissage * d_b
 
-    def entrainement(self):
+    def entrainement(self, donnees, nb_repetitions):
+        x_train, y_train = donnees
+        x_train = x_train.reshape(x_train.shape[0], x_train.shape[1] * x_train.shape[2]).T
 
-        print("\nDEBUT DE L'ENTRAINEMENT")
+        self.nb_entrainements += x_train.shape[0]*nb_repetitions
+        print("\nENTRAINEMENT")
+        for i in range(nb_repetitions):
+            avance = i / nb_repetitions * 100
+            self.propagation(x_train)
+            self.retropropagation(y_train, x_train.shape[1])
+            if avance % 5 == 0:
+                resultats_corrects = comptage_resultats(np.argmax(self.V[-1], 0), y_train)
+                self.taux_reussite.append(resultats_corrects / x_train.shape[1])
+                print(int(avance), " % : rendement ", round(resultats_corrects / x_train.shape[1]), 2)
 
-        self.affichage_reinitialisation(len(self.x_train))
+    def test(self, donnees):
+        print("\nTEST")
 
-        for k in range(len(self.x_train)):
-            self.nombre_actuel += 1
-            self.affichage()
-            self.propagation(self.x_train[k])
-            self.retropropagation(ligne_to_colonne(self.y_train[k]))
+        x_test, y_test = donnees
+        x_test = x_test.reshape(x_test.shape[0], x_test.shape[1] * x_test.shape[2])
 
-        print("FIN DE L'ENTRAINEMENT")
+        nombre_succes, nombre_donnees_test = 0, len(x_test)
 
-    def test(self):
-
-        print("\nDEBUT DU TEST")
-
-        self.affichage_reinitialisation(len(self.x_test))
-
-        for k in range(self.taille_jeu_test):
-            self.propagation(self.x_test[k])
-
-            self.nombre_actuel += 1
-            self.affichage()
-
+        for i in range(nombre_donnees_test):
+            avancee = i / nombre_donnees_test * 100
+            self.propagation(x_test[i].reshape(x_test[i].shape[0], 1))
             valeur_pratique = np.argmax(self.V[-1])
-            valeur_theorique = np.argmax(self.y_test[k])
+            if avancee % 10 == 0:
+                print(avancee, " % : ")
+            if valeur_pratique == y_test[i]:
+                nombre_succes += 1
 
-            if valeur_theorique == valeur_pratique:
-                self.nombre_succes += 1
+        self.taux_reussite = nombre_succes / nombre_donnees_test
 
-        print("FIN DU TEST")
-        print("\nNombre de succès : ", self.nombre_succes)
-        print("Taux de réussite : ", self.nombre_succes / self.taille_jeu_test * 100, "%")
+        print("\nNombre de succès : ", nombre_succes)
+        print("Taux de réussite : ", self.taux_reussite * 100, "%")
