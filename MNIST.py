@@ -1,4 +1,4 @@
-from reseau import Reseau
+from ReseauVectorise import Reseau
 from annexe import ReLu, sigmoid, tanh, softmax
 from matplotlib import pyplot as plt
 from graphes import affichage
