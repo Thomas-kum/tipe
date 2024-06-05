@@ -4,7 +4,7 @@ import numpy as np
 
 def lineaire(mode, matrice):
     if mode == "derivee":
-        return np.zeros(matrice.shape)
+        return np.zeros(matrice.shape) + 1
     return matrice
 
 
@@ -30,7 +30,8 @@ def softmax(mode, matrice):
     if mode == "derivee":
         print("Erreur : la dérivée de la fonction softmax n'est pas définie")
         return None
-    return np.exp(matrice) / sum(np.exp(matrice))
+    e = np.exp(matrice - np.max(matrice))
+    return e / sum(e)
 
 
 def ys_to_matrice(y, nb_classe):

@@ -62,9 +62,9 @@ class Reseau:
             self.propagation(x_train)
             self.retropropagation(y_train, x_train.shape[1])
             if avance % 5 == 0:
-                resultats_corrects = comptage_resultats(np.argmax(self.V[-1], 0), y_train)
-                self.taux_reussite.append(resultats_corrects / x_train.shape[1])
-                print(int(avance), " % : rendement ", round(resultats_corrects / x_train.shape[1]), 2)
+                resultats_corrects = comptage_resultats(np.argmax(self.V[-1], 0), y_train) / y_train.shape[0]
+                self.taux_reussite.append(resultats_corrects)
+                print(int(avance), " % : rendement ", int(resultats_corrects * 100))
 
     def test(self, donnees):
         print("\nTEST")
@@ -82,8 +82,6 @@ class Reseau:
                 print(avancee, " % : ")
             if valeur_pratique == y_test[i]:
                 nombre_succes += 1
-
-        self.taux_reussite = nombre_succes / nombre_donnees_test
 
         print("\nNombre de succès : ", nombre_succes)
         print("Taux de réussite : ", self.taux_reussite * 100, "%")
