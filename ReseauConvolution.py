@@ -65,7 +65,7 @@ class ReseauConvolutif:
             self.V.append(self.fonctions_activation[i + len(self.filtres)]("", self.A[-1]))
 
     def retropropagation(self, y):
-        y = ys_to_matrice(y, self.nb_classes).T
+        y = y.T
 
         for k in range(1, self.taille_dense):
             if k == 1:
@@ -106,7 +106,7 @@ class ReseauConvolutif:
                 x = x_train[j]
                 y = np.array([y_train[j]])
                 self.propagation(x)
-                self.retropropagation(y)
+                self.retropropagation(ys_to_matrice(y, self.nb_classes))
 
                 corr += comptage_resultats(np.argmax(self.V[-1], 0) + 1, y)
 

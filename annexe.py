@@ -27,14 +27,11 @@ def tanh(mode, matrice):
 
 
 def softmax(mode, matrice):
-    if mode == "derivee":
-        print("Erreur : la dérivée de la fonction softmax n'est pas définie")
-        return None
     e = np.exp(matrice - np.max(matrice))
     return e / sum(e)
 
 
-def ys_to_matrice(y, nb_classe):
+def ys_matriciels (y, nb_classe):
     return np.array([[1 if i == j else 0 for i in range(nb_classe)] for j in y])
 
 
@@ -58,14 +55,11 @@ def image(image):
 def image_resultat(image, valeurs, legendes):
     maxi = np.argmax(valeurs)
     couleurs = ["red" if i == maxi else "blue" for i in range(len(valeurs))]
-
     plt.figure()
     plt.subplot(211)
     plt.imshow(image)
-
     plt.subplot(212)
     plt.bar(legendes, valeurs, color=couleurs)
-
     plt.show()
 
 
@@ -73,18 +67,17 @@ def images_comparaison(image_originale, image_retouchee):
     plt.figure()
     plt.subplot(211)
     plt.imshow(image_originale)
-
     plt.subplot(212)
     plt.imshow(image_retouchee)
-
     plt.show()
 
 
-def affichage(x, y, legendes, titre="", x_label="", y_label=""):
-    for i in range(len(y)):
-        plt.plot(x, y[i], label=legendes[i])
+def affichage(xs, ys, legendes, titre="", x_label="", y_label=""):
+    for i in range(len(ys)):
+        plt.plot(xs, ys[i], label=legendes[i])
     plt.title(titre)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.legend()
+    plt.savefig("graphique.png")
     plt.show()

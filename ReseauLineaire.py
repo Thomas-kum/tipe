@@ -93,7 +93,7 @@ class ReseauConvolutif:
 
     def entrainement(self):
 
-        print("\nDEBUT DE L'ENTRAINEMENT")
+        print("\nDEBUT DE liste'ENTRAINEMENT")
 
         self.affichage_reinitialisation(len(self.x_train)*self.nombre_entrainement)
 
