@@ -29,10 +29,9 @@ class Reseau:
             self.V.append(self.fonctions_activation[i]("", self.A[i + 1]))
 
     def retropropagation(self, y, d):
-        y = y.T
         for k in range(1, len(self.V)):
             if k == 1:
-                d_v = self.V[-1] - y
+                d_v = self.V[-1] - y.T
             else:
                 d_v = np.dot(self.W[-k + 1].T, d_v) * self.fonctions_activation[-k]("derivee", self.V[-k])
             d_w = 1 / d * np.dot(d_v, self.V[-k - 1].T)

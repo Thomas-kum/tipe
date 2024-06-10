@@ -1,8 +1,6 @@
 import numpy as np
-from annexe import ys_to_matrice, comptage_resultats
+from annexe import ys_matriciels, comptage_resultats
 from scipy.signal import convolve2d
-
-from convolution import retournement
 
 
 class ReseauConvolutif:
@@ -32,7 +30,7 @@ class ReseauConvolutif:
         for k in range(len(self.informations_reseau)-1):
             if self.informations_reseau[k][0] == "C":
                 f.append(np.random.randn(3, 3))
-                b2.append(np.random.randn(hauteur_image-2*len(f), hauteur_image-2*len(f)))
+                b2.append(np.random.randn())
                 self.fonctions_activation.append(self.informations_reseau[k][1])
             else:
                 if self.informations_reseau[k-1][0] == "C":
@@ -86,8 +84,8 @@ class ReseauConvolutif:
             i = k - self.taille_dense
 
             d_f = convolve2d(self.V[-k - 1], d_v, mode='valid')
-            d_b2 = d_v
-            d_v = convolve2d(d_v, retournement(self.filtres[-i]), mode='full') * self.fonctions_activation[-k]("derivee", self.A[-k])
+            d_b2 = np.sum(d_v)
+            d_v = convolve2d(d_v, np.flip(self.filtres[-i]), mode='full') * self.fonctions_activation[-k]("derivee", self.A[-k])
 
             self.filtres[-i] = self.filtres[-i] - self.taux_apprentissage * d_f
             self.b2[-(i + 1)] = self.b2[-(i + 1)] - self.taux_apprentissage * d_b2
@@ -106,7 +104,7 @@ class ReseauConvolutif:
                 x = x_train[j]
                 y = np.array([y_train[j]])
                 self.propagation(x)
-                self.retropropagation(ys_to_matrice(y, self.nb_classes))
+                self.retropropagation(ys_matriciels(y, self.nb_classes))
 
                 corr += comptage_resultats(np.argmax(self.V[-1], 0) + 1, y)
 
